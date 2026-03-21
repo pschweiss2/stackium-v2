@@ -1,0 +1,35 @@
+/**
+ * Global styles for the Hope Ignites Ecosystem Diagram
+ */
+
+/* Import Tailwind's base, component, and utility styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global resets and defaults */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure the root div takes full height */
+#root {
+  min-height: 100vh;
+}
+
+/* Optional: Add custom utility classes here */
+@layer utilities {
+  .brand-gradient {
+    background: linear-gradient(135deg, #002a42 0%, #0b6180 50%, #ef7322 100%);
+  }
+}
