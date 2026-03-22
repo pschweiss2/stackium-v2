@@ -38,7 +38,10 @@ import { getAdminContact, getTeamsChatUrl, getMailtoUrl } from './adminData.js';
  *
  * This makes the component reusable for different datasets!
  */
-export default function EcosystemDiagram({ nodes, links, categoryColors, tabName = "Application", activeTab = "applications", setActiveTab = () => {} }) {
+export default function EcosystemDiagram({ nodes, links, categoryColors, tabName = "Application", activeTab = "applications", setActiveTab = () => {}, branding = {} }) {
+  const orgName = branding.org_name || 'Your Organization';
+  const logoSrc = branding.logo_url || '/logo.png';
+  const logoDarkSrc = branding.logo_dark_url || '/dark-logo.png';
   /**
    * LEARNING: useState Hook
    *
@@ -108,7 +111,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
       content: (
         <div>
           <h2 className="text-xl font-bold mb-2" style={{ color: '#002a42' }}>
-            Welcome to the Hope Ignites Application Ecosystem! 👋
+            Welcome to the {orgName} Application Ecosystem! 👋
           </h2>
           <p className="text-sm">
             This interactive diagram shows how our technology stack connects together.
@@ -1160,8 +1163,8 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
           <div className="w-full md:w-auto">
             {/* Logo */}
             <img
-              src={darkMode ? "/dark-logo.png" : "/logo.png"}
-              alt="Hope Ignites Logo"
+              src={darkMode ? logoDarkSrc : logoSrc}
+              alt={`${orgName} Logo`}
               className="mb-3 md:mb-4 h-12 md:h-16 w-auto object-contain"
               style={{ maxWidth: '250px' }}
             />
@@ -3075,7 +3078,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
       {/* Footer */}
       <footer className="py-4 text-center border-t" style={{ borderTopColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
         <p className="text-sm mb-2" style={{ color: '#6b7280' }}>
-          Made with ❤️ by the Hope Ignites Technology Services Team with the help of 🤖 Claude Code
+          Made with ❤️ by the {orgName} Technology Services Team with the help of 🤖 Claude Code
         </p>
         <p className="text-sm mb-2" style={{ color: '#6b7280' }}>
           Application Ecosystem Map version 0.1.1

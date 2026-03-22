@@ -70,6 +70,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('applications');
   const [allApplications, setAllApplications] = useState([]);
   const [allConnections, setAllConnections] = useState([]);
+  const [branding, setBranding] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -101,8 +102,13 @@ export default function App() {
         );
 
         if (brandingRes.ok) {
-          const { data: branding } = await brandingRes.json();
-          applyBranding(branding);
+          const { data: brandingData } = await brandingRes.json();
+          applyBranding(brandingData);
+          // Expand file UUIDs to full asset URLs for logo fields
+          const expanded = { ...brandingData };
+          if (expanded.logo_url) expanded.logo_url = `${DIRECTUS_URL}/assets/${expanded.logo_url}`;
+          if (expanded.logo_dark_url) expanded.logo_dark_url = `${DIRECTUS_URL}/assets/${expanded.logo_dark_url}`;
+          setBranding(expanded);
         }
       } catch (err) {
         setError(err.message);
@@ -160,6 +166,7 @@ export default function App() {
       tabName={tabName}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
+      branding={branding}
     />
   );
 }
