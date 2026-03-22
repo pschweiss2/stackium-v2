@@ -1,13 +1,17 @@
 /**
- * Global styles for the Hope Ignites Ecosystem Diagram
+ * Global styles for Stackium
  */
 
-/* Import Tailwind's base, component, and utility styles */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global resets and defaults */
+/* CSS custom properties for white-label theming — set dynamically from branding API */
+:root {
+  --color-primary: #002a42;
+  --color-accent: #3b82f6;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -22,12 +26,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure the root div takes full height */
 #root {
   min-height: 100vh;
 }
 
-/* Optional: Add custom utility classes here */
 @layer utilities {
   .brand-gradient {
     background: linear-gradient(135deg, #002a42 0%, #0b6180 50%, #ef7322 100%);
