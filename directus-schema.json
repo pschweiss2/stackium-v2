@@ -1,0 +1,275 @@
+{
+  "collections": [
+    {
+      "collection": "connections",
+      "meta": {
+        "collection": "connections",
+        "singleton": false,
+        "hidden": false,
+        "icon": "link"
+      }
+    },
+    {
+      "collection": "admins",
+      "meta": {
+        "collection": "admins",
+        "singleton": false,
+        "hidden": false,
+        "icon": "person"
+      }
+    },
+    {
+      "collection": "application_admins",
+      "meta": {
+        "collection": "application_admins",
+        "singleton": false,
+        "hidden": true,
+        "icon": "import_export"
+      }
+    },
+    {
+      "collection": "branding",
+      "meta": {
+        "collection": "branding",
+        "singleton": true,
+        "hidden": false,
+        "icon": "palette"
+      }
+    }
+  ],
+  "fields": [
+    {
+      "collection": "connections",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "connections",
+      "field": "source_id",
+      "type": "integer",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values" }
+    },
+    {
+      "collection": "connections",
+      "field": "target_id",
+      "type": "integer",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values" }
+    },
+    {
+      "collection": "connections",
+      "field": "type",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": {
+        "interface": "select-dropdown",
+        "options": {
+          "choices": [
+            { "text": "Data", "value": "data" },
+            { "text": "SSO", "value": "sso" },
+            { "text": "Observe", "value": "observe" },
+            { "text": "Backup", "value": "backup" },
+            { "text": "Security", "value": "security" }
+          ]
+        }
+      }
+    },
+    {
+      "collection": "connections",
+      "field": "isISPConnection",
+      "type": "boolean",
+      "schema": { "default_value": false, "is_nullable": true },
+      "meta": { "interface": "boolean" }
+    },
+
+    {
+      "collection": "admins",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "admins",
+      "field": "name",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "admins",
+      "field": "email",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "admins",
+      "field": "teams_link",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "admins",
+      "field": "title",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+
+    {
+      "collection": "application_admins",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "application_admins",
+      "field": "application_id",
+      "type": "integer",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "select-dropdown-m2o" }
+    },
+    {
+      "collection": "application_admins",
+      "field": "admin_id",
+      "type": "integer",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "select-dropdown-m2o" }
+    },
+    {
+      "collection": "application_admins",
+      "field": "role",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": {
+        "interface": "select-dropdown",
+        "options": {
+          "choices": [
+            { "text": "Primary", "value": "primary" },
+            { "text": "Secondary", "value": "secondary" }
+          ]
+        }
+      }
+    },
+
+    {
+      "collection": "branding",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "branding",
+      "field": "org_name",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "branding",
+      "field": "app_title",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "branding",
+      "field": "logo_url",
+      "type": "uuid",
+      "schema": { "is_nullable": true, "foreign_key_table": "directus_files", "foreign_key_column": "id" },
+      "meta": { "interface": "file-image", "display": "image", "special": ["file"] }
+    },
+    {
+      "collection": "branding",
+      "field": "logo_dark_url",
+      "type": "uuid",
+      "schema": { "is_nullable": true, "foreign_key_table": "directus_files", "foreign_key_column": "id" },
+      "meta": { "interface": "file-image", "display": "image", "special": ["file"] }
+    },
+    {
+      "collection": "branding",
+      "field": "favicon_url",
+      "type": "uuid",
+      "schema": { "is_nullable": true, "foreign_key_table": "directus_files", "foreign_key_column": "id" },
+      "meta": { "interface": "file-image", "display": "image", "special": ["file"] }
+    },
+    {
+      "collection": "branding",
+      "field": "primary_color",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Hex color e.g. #1e40af" }
+    },
+    {
+      "collection": "branding",
+      "field": "accent_color",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Hex color e.g. #3b82f6" }
+    },
+    {
+      "collection": "branding",
+      "field": "admin_email_domain",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "e.g. stackium.tech" }
+    },
+    {
+      "collection": "branding",
+      "field": "support_email",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "branding",
+      "field": "feedback_url",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input" }
+    },
+    {
+      "collection": "branding",
+      "field": "analytics_ga_id",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Google Analytics measurement ID" }
+    },
+    {
+      "collection": "branding",
+      "field": "analytics_cf_token",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Cloudflare Web Analytics token" }
+    }
+  ],
+  "relations": [
+    {
+      "collection": "connections",
+      "field": "source_id",
+      "related_collection": "applications"
+    },
+    {
+      "collection": "connections",
+      "field": "target_id",
+      "related_collection": "applications"
+    },
+    {
+      "collection": "application_admins",
+      "field": "application_id",
+      "related_collection": "applications"
+    },
+    {
+      "collection": "application_admins",
+      "field": "admin_id",
+      "related_collection": "admins"
+    }
+  ]
+}
