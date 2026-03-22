@@ -104,10 +104,15 @@ export default function App() {
         if (brandingRes.ok) {
           const { data: brandingData } = await brandingRes.json();
           applyBranding(brandingData);
-          // Expand file UUIDs to full asset URLs for logo fields
+          // Directus file fields return either a UUID string or a file object {id, ...}
+          const toAssetUrl = (val) => {
+            if (!val) return null;
+            const id = typeof val === 'object' ? val.id : val;
+            return `${DIRECTUS_URL}/assets/${id}`;
+          };
           const expanded = { ...brandingData };
-          if (expanded.logo_url) expanded.logo_url = `${DIRECTUS_URL}/assets/${expanded.logo_url}`;
-          if (expanded.logo_dark_url) expanded.logo_dark_url = `${DIRECTUS_URL}/assets/${expanded.logo_dark_url}`;
+          if (expanded.logo_url) expanded.logo_url = toAssetUrl(expanded.logo_url);
+          if (expanded.logo_dark_url) expanded.logo_dark_url = toAssetUrl(expanded.logo_dark_url);
           setBranding(expanded);
         }
       } catch (err) {
