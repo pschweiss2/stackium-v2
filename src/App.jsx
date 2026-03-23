@@ -103,9 +103,11 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
-        // DEBUG: log first app's application_admins to confirm field names from Directus
-        const firstWithAdmins = apps.find(a => a.application_admins?.length > 0);
-        if (firstWithAdmins) console.log('[DEBUG] application_admins sample:', JSON.stringify(firstWithAdmins.application_admins, null, 2));
+        // DEBUG: log first app's keys and application_admins value
+        if (apps[0]) {
+          console.log('[DEBUG] First app keys:', Object.keys(apps[0]));
+          console.log('[DEBUG] application_admins value:', JSON.stringify(apps[0].application_admins, null, 2));
+        }
 
         setAllApplications(apps);
 
