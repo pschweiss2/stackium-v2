@@ -80,7 +80,7 @@ export default function App() {
     async function fetchData() {
       try {
         const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes] = await Promise.all([
-          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*&limit=-1`),
+          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*&limit=-1`),
           fetch(`${DIRECTUS_URL}/items/connections?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/branding`),
           fetch(`${DIRECTUS_URL}/items/platforms?limit=-1`),
