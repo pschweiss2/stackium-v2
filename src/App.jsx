@@ -71,20 +71,34 @@ export default function App() {
   const [allApplications, setAllApplications] = useState([]);
   const [allConnections, setAllConnections] = useState([]);
   const [branding, setBranding] = useState({});
+  const [platforms, setPlatforms] = useState([]);
+  const [documentation, setDocumentation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [appsRes, connectionsRes, brandingRes] = await Promise.all([
-          fetch(`${DIRECTUS_URL}/items/applications?fields=*&limit=-1`),
+        const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes] = await Promise.all([
+          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*&limit=-1`),
           fetch(`${DIRECTUS_URL}/items/connections?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/branding`),
+          fetch(`${DIRECTUS_URL}/items/platforms?limit=-1`),
+          fetch(`${DIRECTUS_URL}/items/documentation`),
         ]);
 
         if (!appsRes.ok) throw new Error(`Failed to fetch applications (${appsRes.status})`);
         if (!connectionsRes.ok) throw new Error(`Failed to fetch connections (${connectionsRes.status})`);
+
+        if (platformsRes.ok) {
+          const { data: platformsData } = await platformsRes.json();
+          setPlatforms(platformsData || []);
+        }
+
+        if (docsRes.ok) {
+          const { data: docsData } = await docsRes.json();
+          setDocumentation(docsData);
+        }
 
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
@@ -104,10 +118,15 @@ export default function App() {
         if (brandingRes.ok) {
           const { data: brandingData } = await brandingRes.json();
           applyBranding(brandingData);
-          // Expand file UUIDs to full asset URLs for logo fields
+          // Directus file fields return either a UUID string or a file object {id, ...}
+          const toAssetUrl = (val) => {
+            if (!val) return null;
+            const id = typeof val === 'object' ? val.id : val;
+            return `${DIRECTUS_URL}/assets/${id}`;
+          };
           const expanded = { ...brandingData };
-          if (expanded.logo_url) expanded.logo_url = `${DIRECTUS_URL}/assets/${expanded.logo_url}`;
-          if (expanded.logo_dark_url) expanded.logo_dark_url = `${DIRECTUS_URL}/assets/${expanded.logo_dark_url}`;
+          if (expanded.logo_url) expanded.logo_url = toAssetUrl(expanded.logo_url);
+          if (expanded.logo_dark_url) expanded.logo_dark_url = toAssetUrl(expanded.logo_dark_url);
           setBranding(expanded);
         }
       } catch (err) {
@@ -167,6 +186,8 @@ export default function App() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       branding={branding}
+      platforms={platforms}
+      documentation={documentation}
     />
   );
 }
