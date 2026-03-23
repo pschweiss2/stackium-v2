@@ -38,7 +38,7 @@ import { getAdminContact, getTeamsChatUrl, getMailtoUrl } from './adminData.js';
  *
  * This makes the component reusable for different datasets!
  */
-export default function EcosystemDiagram({ nodes, links, categoryColors, tabName = "Application", activeTab = "applications", setActiveTab = () => {}, branding = {} }) {
+export default function EcosystemDiagram({ nodes, links, categoryColors, tabName = "Application", activeTab = "applications", setActiveTab = () => {}, branding = {}, platforms = [], documentation = null }) {
   const orgName = branding.org_name || 'Your Organization';
   const logoSrc = branding.logo_url || '/logo.png';
   const logoDarkSrc = branding.logo_dark_url || '/dark-logo.png';
@@ -248,21 +248,12 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
   };
 
   // Load and display documentation
-  const openDocs = async () => {
-    setDocsLoading(true);
+  const openDocs = () => {
     setShowDocs(true);
-
-    try {
-      // Determine which doc to load based on active tab
-      const docFile = activeTab === 'security' ? 'security.md' : 'applications.md';
-      const response = await fetch(`/docs/${docFile}`);
-      const text = await response.text();
-      setDocsContent(text);
-    } catch (error) {
-      console.error('Error loading documentation:', error);
-      setDocsContent('# Error\n\nFailed to load documentation. Please try again.');
-    } finally {
-      setDocsLoading(false);
+    if (documentation && documentation.content) {
+      setDocsContent(documentation.content);
+    } else {
+      setDocsContent('# No Documentation Available\n\nDocumentation content has not been configured yet. Add content in the Directus `documentation` singleton.');
     }
   };
 
@@ -734,14 +725,13 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
     node.filter(d => d.platform)
       .append('text')
       .text(d => {
-        // Abbreviate platform names for the badge
-        const platformNames = {
-          'm365': 'M365',
-          'microsoft-365': 'M365',
-          'salesforce': 'SF',
-          'cloudflare': 'CF'
-        };
-        return platformNames[d.platform] || d.platform.toUpperCase().slice(0, 4);
+        // platform may be a full object (from Directus M2O expand) or a legacy string key
+        if (d.platform && typeof d.platform === 'object') {
+          return d.platform.abbreviation || d.platform.name.toUpperCase().slice(0, 4);
+        }
+        // Fallback: match by key in platforms array, or truncate string
+        const match = platforms.find(p => p.key === d.platform || p.abbreviation === d.platform);
+        return match ? match.abbreviation : String(d.platform).toUpperCase().slice(0, 4);
       })
       .attr('text-anchor', 'middle')
       .attr('dy', -24)  // Position inside the badge
@@ -1325,7 +1315,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
 
         {/* Submit Feedback Badge - Peeks from left on desktop, bottom on mobile */}
         <a
-          href="https://forms.monday.com/forms/b641de335307cdd5f9b5713b8f9e4c8c?r=use1"
+          href={branding.feedback_url || 'https://stackium.tech/feedback'}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed left-0 md:left-0 bottom-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 flex items-center gap-2 px-4 py-3 rounded-r-lg md:rounded-r-lg rounded-l-lg md:rounded-l-none shadow-lg z-50 transition-all duration-300 ease-in-out"
@@ -1702,10 +1692,12 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                   <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.description}</p>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Technology</h3>
-                  <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.tech}</p>
-                </div>
+                {selectedNode.tech && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Technology Provider</h3>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.tech}</p>
+                  </div>
+                )}
 
                 {selectedNode.cloudProvider && (
                   <div>
@@ -2179,7 +2171,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                       onClick={() => handleSort('tech')}
                     >
                       <div className="flex items-center gap-2">
-                        Technology
+                        Technology Provider
                         {sortConfig.key === 'tech' && (
                           <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -2481,10 +2473,12 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                   <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.description}</p>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Technology</h3>
-                  <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.tech}</p>
-                </div>
+                {selectedNode.tech && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Technology Provider</h3>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.tech}</p>
+                  </div>
+                )}
 
                 {selectedNode.cloudProvider && (
                   <div>
@@ -3028,49 +3022,23 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
           </div>
 
           {/* Platform Badges */}
+          {platforms.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: '#6b7280' }}>
               Platform Badges
             </h4>
             <div className="flex flex-wrap gap-6">
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  M365
+              {platforms.map(p => (
+                <div key={p.id} className="flex items-center gap-2">
+                  <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
+                    {p.abbreviation}
+                  </div>
+                  <span className="text-sm" style={{ color: '#0b6180' }}>{p.name}</span>
                 </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Microsoft 365</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  SF
-                </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Salesforce Platform</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  CF
-                </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Cloudflare</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  DATA
-                </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Data Center Infrastructure</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  CISC
-                </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Cisco Meraki Platform</span>
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #9ca3af' }}>
-                  AZUR
-                </div>
-                <span className="text-sm" style={{ color: '#0b6180' }}>Azure</span>
-              </div>                
-              </div>                            
+              ))}
             </div>
           </div>
+          )}
         </div>
         )}
       </div>
@@ -3078,23 +3046,10 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
       {/* Footer */}
       <footer className="py-4 text-center border-t" style={{ borderTopColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
         <p className="text-sm mb-2" style={{ color: '#6b7280' }}>
-          Made with ❤️ by the {orgName} Technology Services Team with the help of 🤖 Claude Code
+          Made with ❤️ by the Stackium.tech community with the help of 🤖 Claude Code
         </p>
         <p className="text-sm mb-2" style={{ color: '#6b7280' }}>
-          Application Ecosystem Map version 0.1.1
-        </p>        
-        <p className="text-sm mb-2" style={{ color: '#6b7280' }}>
-          Application Ecosystem is part of{' '}
-          <a
-            href="https://stackium.tech"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline font-medium"
-            style={{ color: '#0b6180' }}
-          >
-            Stackium.tech
-          </a>{' '}
-          <span style={{ color: '#9ca3af' }}>(Codename Nova)</span>
+          Application Ecosystem Map version 1.0 (Code Name Mars)
         </p>
         <p className="text-xs" style={{ color: '#9ca3af' }}>
           Licensed under the{' '}
@@ -3106,16 +3061,6 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
             style={{ color: '#6b7280' }}
           >
             MIT License
-          </a>
-          {' · '}
-          <a
-            href="/docs/CHANGELOG.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-            style={{ color: '#6b7280' }}
-          >
-            Changelog
           </a>
         </p>
       </footer>
@@ -3162,31 +3107,25 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
 
             {/* Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {docsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#ef7322' }}></div>
-                </div>
-              ) : (
-                <div
-                  className="prose prose-sm md:prose-base max-w-none"
-                  style={{
-                    color: darkMode ? '#f3f4f6' : '#002a42'
+              <div
+                className="prose prose-sm md:prose-base max-w-none"
+                style={{
+                  color: darkMode ? '#f3f4f6' : '#002a42'
+                }}
+              >
+                <ReactMarkdown
+                  components={{
+                    h1: ({node, ...props}) => <h1 style={{ color: '#ef7322', borderBottom: '2px solid #ef7322', paddingBottom: '0.5rem' }} {...props} />,
+                    h2: ({node, ...props}) => <h2 style={{ color: '#0b6180', marginTop: '2rem' }} {...props} />,
+                    h3: ({node, ...props}) => <h3 style={{ color: '#002a42' }} {...props} />,
+                    a: ({node, ...props}) => <a style={{ color: '#ef7322' }} {...props} />,
+                    code: ({node, ...props}) => <code style={{ backgroundColor: darkMode ? '#374151' : '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '0.25rem' }} {...props} />,
+                    pre: ({node, ...props}) => <pre style={{ backgroundColor: darkMode ? '#374151' : '#f3f4f6', padding: '1rem', borderRadius: '0.5rem', overflow: 'auto' }} {...props} />
                   }}
                 >
-                  <ReactMarkdown
-                    components={{
-                      h1: ({node, ...props}) => <h1 style={{ color: '#ef7322', borderBottom: '2px solid #ef7322', paddingBottom: '0.5rem' }} {...props} />,
-                      h2: ({node, ...props}) => <h2 style={{ color: '#0b6180', marginTop: '2rem' }} {...props} />,
-                      h3: ({node, ...props}) => <h3 style={{ color: '#002a42' }} {...props} />,
-                      a: ({node, ...props}) => <a style={{ color: '#ef7322' }} {...props} />,
-                      code: ({node, ...props}) => <code style={{ backgroundColor: darkMode ? '#374151' : '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '0.25rem' }} {...props} />,
-                      pre: ({node, ...props}) => <pre style={{ backgroundColor: darkMode ? '#374151' : '#f3f4f6', padding: '1rem', borderRadius: '0.5rem', overflow: 'auto' }} {...props} />
-                    }}
-                  >
-                    {docsContent}
-                  </ReactMarkdown>
-                </div>
-              )}
+                  {docsContent}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         </div>
@@ -3198,7 +3137,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
         <div className={`absolute bottom-0 right-0 transition-all duration-500 ease-out ${isOrbMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {/* App Launcher - Top Right */}
           <a
-            href="https://my.hopeignites.app"
+            href={branding.app_launcher_url || 'https://stackium.tech/app'}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute group"
@@ -3234,7 +3173,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
 
           {/* System Status - Bottom Right */}
           <a
-            href="https://up.hopeignites.app"
+            href={branding.system_status_url || 'https://stackium.tech/status'}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute group"

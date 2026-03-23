@@ -35,6 +35,24 @@
         "hidden": false,
         "icon": "palette"
       }
+    },
+    {
+      "collection": "platforms",
+      "meta": {
+        "collection": "platforms",
+        "singleton": false,
+        "hidden": false,
+        "icon": "layers"
+      }
+    },
+    {
+      "collection": "documentation",
+      "meta": {
+        "collection": "documentation",
+        "singleton": true,
+        "hidden": false,
+        "icon": "book"
+      }
     }
   ],
   "fields": [
@@ -248,6 +266,72 @@
       "type": "string",
       "schema": { "is_nullable": true },
       "meta": { "interface": "input", "note": "Cloudflare Web Analytics token" }
+    },
+    {
+      "collection": "branding",
+      "field": "app_launcher_url",
+      "type": "string",
+      "schema": { "is_nullable": true, "default_value": "https://stackium.tech/app" },
+      "meta": { "interface": "input", "note": "App Launcher URL (default: https://stackium.tech/app)" }
+    },
+    {
+      "collection": "branding",
+      "field": "system_status_url",
+      "type": "string",
+      "schema": { "is_nullable": true, "default_value": "https://stackium.tech/status" },
+      "meta": { "interface": "input", "note": "System Status URL (default: https://stackium.tech/status)" }
+    },
+
+    {
+      "collection": "platforms",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "platforms",
+      "field": "name",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "input", "note": "Full platform name e.g. Microsoft 365" }
+    },
+    {
+      "collection": "platforms",
+      "field": "abbreviation",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "input", "note": "Short badge label e.g. M365" }
+    },
+    {
+      "collection": "platforms",
+      "field": "key",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "input", "note": "Slug used in applications.platform field e.g. m365, salesforce" }
+    },
+
+    {
+      "collection": "applications",
+      "field": "platform",
+      "type": "integer",
+      "schema": { "is_nullable": true, "foreign_key_table": "platforms", "foreign_key_column": "id" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "note": "Platform suite this app belongs to" }
+    },
+
+    {
+      "collection": "documentation",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "documentation",
+      "field": "content",
+      "type": "text",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input-multiline", "note": "Markdown content shown in the Documentation modal" }
     }
   ],
   "relations": [
@@ -270,6 +354,11 @@
       "collection": "application_admins",
       "field": "admin_id",
       "related_collection": "admins"
+    },
+    {
+      "collection": "applications",
+      "field": "platform",
+      "related_collection": "platforms"
     }
   ]
 }
