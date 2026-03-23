@@ -80,7 +80,7 @@ export default function App() {
     async function fetchData() {
       try {
         const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes] = await Promise.all([
-          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*&limit=-1`),
+          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*,application_admins.role,application_admins.admin_id.*&limit=-1`),
           fetch(`${DIRECTUS_URL}/items/connections?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/branding`),
           fetch(`${DIRECTUS_URL}/items/platforms?limit=-1`),
@@ -102,6 +102,10 @@ export default function App() {
 
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
+
+        // DEBUG: log first app's application_admins to confirm field names from Directus
+        const firstWithAdmins = apps.find(a => a.application_admins?.length > 0);
+        if (firstWithAdmins) console.log('[DEBUG] application_admins sample:', JSON.stringify(firstWithAdmins.application_admins, null, 2));
 
         setAllApplications(apps);
 

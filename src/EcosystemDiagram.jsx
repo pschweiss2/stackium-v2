@@ -1776,102 +1776,137 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                   return null;
                 })()}
 
-                {selectedNode.primaryAdmin && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
-                    {(() => {
-                      const contact = getAdminContact(selectedNode.primaryAdmin);
-                      return (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium" style={{ color: '#0b6180' }}>
-                            {selectedNode.primaryAdmin}
-                          </p>
-                          {contact && (
-                            <div className="flex gap-2">
-                              <a
-                                href={getMailtoUrl(contact.email)}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                style={{ backgroundColor: '#0b6180', color: 'white' }}
-                                title={`Email ${selectedNode.primaryAdmin}`}
-                              >
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                Email
-                              </a>
-                              <a
-                                href={getTeamsChatUrl(contact.teamsId)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                style={{ backgroundColor: '#6264a7', color: 'white' }}
-                                title={`Teams chat with ${selectedNode.primaryAdmin}`}
-                              >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
-                                </svg>
-                                Teams
-                              </a>
+                {/* Admin Contacts — uses Directus application_admins M2M, falls back to legacy string fields */}
+                {(() => {
+                  const appAdmins = selectedNode.application_admins || [];
+                  const primaryAdmins = appAdmins.filter(aa => aa.role === 'primary' && aa.admin_id);
+                  const secondaryAdmins = appAdmins.filter(aa => aa.role === 'secondary' && aa.admin_id);
+
+                  const renderAdminCard = (admin, key) => (
+                    <div key={key} className="space-y-2">
+                      <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{admin.name}</p>
+                      {admin.title && (
+                        <p className="text-xs" style={{ color: '#6b7280' }}>{admin.title}</p>
+                      )}
+                      <div className="flex gap-2">
+                        {admin.email && (
+                          <a
+                            href={getMailtoUrl(admin.email)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
+                            style={{ backgroundColor: '#0b6180', color: 'white' }}
+                            title={`Email ${admin.name}`}
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Email
+                          </a>
+                        )}
+                        {admin.teams_link && (
+                          <a
+                            href={admin.teams_link.startsWith('http') ? admin.teams_link : getTeamsChatUrl(admin.teams_link)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
+                            style={{ backgroundColor: '#6264a7', color: 'white' }}
+                            title={`Teams chat with ${admin.name}`}
+                          >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
+                            </svg>
+                            Teams
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+
+                  if (appAdmins.length > 0) {
+                    return (
+                      <>
+                        {primaryAdmins.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
+                            <div className="space-y-3">
+                              {primaryAdmins.map((aa, idx) => renderAdminCard(aa.admin_id, idx))}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                          </div>
+                        )}
+                        {secondaryAdmins.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{secondaryAdmins.length > 1 ? 's' : ''}</h3>
+                            <div className="space-y-3">
+                              {secondaryAdmins.map((aa, idx) => renderAdminCard(aa.admin_id, idx))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
 
-                {selectedNode.secondaryAdmin && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{selectedNode.secondaryAdmin.includes(',') ? 's' : ''}</h3>
-                    {(() => {
-                      // Split by comma and trim whitespace to handle multiple admins
-                      const adminNames = selectedNode.secondaryAdmin.split(',').map(name => name.trim());
-
-                      return (
-                        <div className="space-y-3">
-                          {adminNames.map((adminName, index) => {
-                            const contact = getAdminContact(adminName);
+                  // Legacy fallback: primaryAdmin / secondaryAdmin string fields
+                  return (
+                    <>
+                      {selectedNode.primaryAdmin && (
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
+                          {(() => {
+                            const contact = getAdminContact(selectedNode.primaryAdmin);
                             return (
-                              <div key={index} className="space-y-2">
-                                <p className="text-sm font-medium" style={{ color: '#0b6180' }}>
-                                  {adminName}
-                                </p>
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{selectedNode.primaryAdmin}</p>
                                 {contact && (
                                   <div className="flex gap-2">
-                                    <a
-                                      href={getMailtoUrl(contact.email)}
-                                      className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                      style={{ backgroundColor: '#0b6180', color: 'white' }}
-                                      title={`Email ${adminName}`}
-                                    >
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                      </svg>
+                                    <a href={getMailtoUrl(contact.email)} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#0b6180', color: 'white' }} title={`Email ${selectedNode.primaryAdmin}`}>
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                       Email
                                     </a>
-                                    <a
-                                      href={getTeamsChatUrl(contact.teamsId)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                      style={{ backgroundColor: '#6264a7', color: 'white' }}
-                                      title={`Teams chat with ${adminName}`}
-                                    >
-                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
-                                      </svg>
+                                    <a href={getTeamsChatUrl(contact.teamsId)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#6264a7', color: 'white' }} title={`Teams chat with ${selectedNode.primaryAdmin}`}>
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/></svg>
                                       Teams
                                     </a>
                                   </div>
                                 )}
                               </div>
                             );
-                          })}
+                          })()}
                         </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                      )}
+                      {selectedNode.secondaryAdmin && (
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{selectedNode.secondaryAdmin.includes(',') ? 's' : ''}</h3>
+                          {(() => {
+                            const adminNames = selectedNode.secondaryAdmin.split(',').map(name => name.trim());
+                            return (
+                              <div className="space-y-3">
+                                {adminNames.map((adminName, index) => {
+                                  const contact = getAdminContact(adminName);
+                                  return (
+                                    <div key={index} className="space-y-2">
+                                      <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{adminName}</p>
+                                      {contact && (
+                                        <div className="flex gap-2">
+                                          <a href={getMailtoUrl(contact.email)} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#0b6180', color: 'white' }} title={`Email ${adminName}`}>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                            Email
+                                          </a>
+                                          <a href={getTeamsChatUrl(contact.teamsId)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#6264a7', color: 'white' }} title={`Teams chat with ${adminName}`}>
+                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/></svg>
+                                            Teams
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {selectedNode.thirdPartyProvider && (
                   <div>
@@ -2557,102 +2592,137 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                   return null;
                 })()}
 
-                {selectedNode.primaryAdmin && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
-                    {(() => {
-                      const contact = getAdminContact(selectedNode.primaryAdmin);
-                      return (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium" style={{ color: '#0b6180' }}>
-                            {selectedNode.primaryAdmin}
-                          </p>
-                          {contact && (
-                            <div className="flex gap-2">
-                              <a
-                                href={getMailtoUrl(contact.email)}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                style={{ backgroundColor: '#0b6180', color: 'white' }}
-                                title={`Email ${selectedNode.primaryAdmin}`}
-                              >
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                Email
-                              </a>
-                              <a
-                                href={getTeamsChatUrl(contact.teamsId)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                style={{ backgroundColor: '#6264a7', color: 'white' }}
-                                title={`Teams chat with ${selectedNode.primaryAdmin}`}
-                              >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
-                                </svg>
-                                Teams
-                              </a>
+                {/* Admin Contacts — uses Directus application_admins M2M, falls back to legacy string fields */}
+                {(() => {
+                  const appAdmins = selectedNode.application_admins || [];
+                  const primaryAdmins = appAdmins.filter(aa => aa.role === 'primary' && aa.admin_id);
+                  const secondaryAdmins = appAdmins.filter(aa => aa.role === 'secondary' && aa.admin_id);
+
+                  const renderAdminCard = (admin, key) => (
+                    <div key={key} className="space-y-2">
+                      <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{admin.name}</p>
+                      {admin.title && (
+                        <p className="text-xs" style={{ color: '#6b7280' }}>{admin.title}</p>
+                      )}
+                      <div className="flex gap-2">
+                        {admin.email && (
+                          <a
+                            href={getMailtoUrl(admin.email)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
+                            style={{ backgroundColor: '#0b6180', color: 'white' }}
+                            title={`Email ${admin.name}`}
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Email
+                          </a>
+                        )}
+                        {admin.teams_link && (
+                          <a
+                            href={admin.teams_link.startsWith('http') ? admin.teams_link : getTeamsChatUrl(admin.teams_link)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
+                            style={{ backgroundColor: '#6264a7', color: 'white' }}
+                            title={`Teams chat with ${admin.name}`}
+                          >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
+                            </svg>
+                            Teams
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+
+                  if (appAdmins.length > 0) {
+                    return (
+                      <>
+                        {primaryAdmins.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
+                            <div className="space-y-3">
+                              {primaryAdmins.map((aa, idx) => renderAdminCard(aa.admin_id, idx))}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                          </div>
+                        )}
+                        {secondaryAdmins.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{secondaryAdmins.length > 1 ? 's' : ''}</h3>
+                            <div className="space-y-3">
+                              {secondaryAdmins.map((aa, idx) => renderAdminCard(aa.admin_id, idx))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
 
-                {selectedNode.secondaryAdmin && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{selectedNode.secondaryAdmin.includes(',') ? 's' : ''}</h3>
-                    {(() => {
-                      // Split by comma and trim whitespace to handle multiple admins
-                      const adminNames = selectedNode.secondaryAdmin.split(',').map(name => name.trim());
-
-                      return (
-                        <div className="space-y-3">
-                          {adminNames.map((adminName, index) => {
-                            const contact = getAdminContact(adminName);
+                  // Legacy fallback: primaryAdmin / secondaryAdmin string fields
+                  return (
+                    <>
+                      {selectedNode.primaryAdmin && (
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Primary Admin</h3>
+                          {(() => {
+                            const contact = getAdminContact(selectedNode.primaryAdmin);
                             return (
-                              <div key={index} className="space-y-2">
-                                <p className="text-sm font-medium" style={{ color: '#0b6180' }}>
-                                  {adminName}
-                                </p>
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{selectedNode.primaryAdmin}</p>
                                 {contact && (
                                   <div className="flex gap-2">
-                                    <a
-                                      href={getMailtoUrl(contact.email)}
-                                      className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                      style={{ backgroundColor: '#0b6180', color: 'white' }}
-                                      title={`Email ${adminName}`}
-                                    >
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                      </svg>
+                                    <a href={getMailtoUrl(contact.email)} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#0b6180', color: 'white' }} title={`Email ${selectedNode.primaryAdmin}`}>
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                       Email
                                     </a>
-                                    <a
-                                      href={getTeamsChatUrl(contact.teamsId)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md"
-                                      style={{ backgroundColor: '#6264a7', color: 'white' }}
-                                      title={`Teams chat with ${adminName}`}
-                                    >
-                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/>
-                                      </svg>
+                                    <a href={getTeamsChatUrl(contact.teamsId)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#6264a7', color: 'white' }} title={`Teams chat with ${selectedNode.primaryAdmin}`}>
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/></svg>
                                       Teams
                                     </a>
                                   </div>
                                 )}
                               </div>
                             );
-                          })}
+                          })()}
                         </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                      )}
+                      {selectedNode.secondaryAdmin && (
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Secondary Admin{selectedNode.secondaryAdmin.includes(',') ? 's' : ''}</h3>
+                          {(() => {
+                            const adminNames = selectedNode.secondaryAdmin.split(',').map(name => name.trim());
+                            return (
+                              <div className="space-y-3">
+                                {adminNames.map((adminName, index) => {
+                                  const contact = getAdminContact(adminName);
+                                  return (
+                                    <div key={index} className="space-y-2">
+                                      <p className="text-sm font-medium" style={{ color: '#0b6180' }}>{adminName}</p>
+                                      {contact && (
+                                        <div className="flex gap-2">
+                                          <a href={getMailtoUrl(contact.email)} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#0b6180', color: 'white' }} title={`Email ${adminName}`}>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                            Email
+                                          </a>
+                                          <a href={getTeamsChatUrl(contact.teamsId)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:shadow-md" style={{ backgroundColor: '#6264a7', color: 'white' }} title={`Teams chat with ${adminName}`}>
+                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.625 8.25h-7.5v7.5h7.5v-7.5zm-9.375 7.5H3.375V8.25h7.875v7.5zm9.375-9.375h-7.5V3.375c0-.621-.504-1.125-1.125-1.125H3.375C2.754 2.25 2.25 2.754 2.25 3.375v10.125c0 .621.504 1.125 1.125 1.125h7.875v2.25H3.375c-.621 0-1.125.504-1.125 1.125v2.625c0 .621.504 1.125 1.125 1.125h18.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125z"/></svg>
+                                            Teams
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {selectedNode.thirdPartyProvider && (
                   <div>
