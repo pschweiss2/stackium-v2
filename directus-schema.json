@@ -53,6 +53,15 @@
         "hidden": false,
         "icon": "book"
       }
+    },
+    {
+      "collection": "third_party_providers",
+      "meta": {
+        "collection": "third_party_providers",
+        "singleton": false,
+        "hidden": false,
+        "icon": "handshake"
+      }
     }
   ],
   "fields": [
@@ -332,6 +341,43 @@
       "type": "text",
       "schema": { "is_nullable": true },
       "meta": { "interface": "input-multiline", "note": "Markdown content shown in the Documentation modal" }
+    },
+
+    {
+      "collection": "third_party_providers",
+      "field": "id",
+      "type": "integer",
+      "schema": { "is_primary_key": true, "has_auto_increment": true },
+      "meta": { "hidden": true }
+    },
+    {
+      "collection": "third_party_providers",
+      "field": "name",
+      "type": "string",
+      "schema": { "is_nullable": false },
+      "meta": { "interface": "input", "note": "Full provider name e.g. Microsoft" }
+    },
+    {
+      "collection": "third_party_providers",
+      "field": "abbreviation",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Short label e.g. MSFT" }
+    },
+    {
+      "collection": "third_party_providers",
+      "field": "website",
+      "type": "string",
+      "schema": { "is_nullable": true },
+      "meta": { "interface": "input", "note": "Vendor website URL" }
+    },
+
+    {
+      "collection": "applications",
+      "field": "thirdPartyProvider",
+      "type": "integer",
+      "schema": { "is_nullable": true, "foreign_key_table": "third_party_providers", "foreign_key_column": "id" },
+      "meta": { "interface": "select-dropdown-m2o", "display": "related-values", "note": "Third-party vendor for this application" }
     }
   ],
   "relations": [
@@ -359,6 +405,11 @@
       "collection": "applications",
       "field": "platform",
       "related_collection": "platforms"
+    },
+    {
+      "collection": "applications",
+      "field": "thirdPartyProvider",
+      "related_collection": "third_party_providers"
     }
   ]
 }
