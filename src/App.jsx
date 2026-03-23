@@ -103,10 +103,13 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
-        // DEBUG: log first app's keys and application_admins value
-        if (apps[0]) {
-          console.log('[DEBUG] First app keys:', Object.keys(apps[0]));
-          console.log('[DEBUG] application_admins value:', JSON.stringify(apps[0].application_admins, null, 2));
+        // DEBUG: fetch application_admins directly to see junction field names
+        const aaDebugRes = await fetch(`${DIRECTUS_URL}/items/application_admins?fields=*&limit=5`);
+        if (aaDebugRes.ok) {
+          const { data: aaDebugData } = await aaDebugRes.json();
+          console.log('[DEBUG] application_admins raw items:', JSON.stringify(aaDebugData, null, 2));
+        } else {
+          console.log('[DEBUG] application_admins fetch failed:', aaDebugRes.status);
         }
 
         setAllApplications(apps);
