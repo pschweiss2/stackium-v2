@@ -1708,6 +1708,16 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                   </div>
                 )}
 
+                {selectedNode.platform && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Platform</h3>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>
+                      {typeof selectedNode.platform === 'object'
+                        ? (selectedNode.platform.name || selectedNode.platform.abbreviation)
+                        : selectedNode.platform}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Owner</h3>
                   <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.owner}</p>
@@ -1866,7 +1876,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                 {selectedNode.thirdPartyProvider && (
                   <div>
                     <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Aligned Support Provider</h3>
-                    <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.thirdPartyProvider}</p>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>{typeof selectedNode.thirdPartyProvider === 'object' ? (selectedNode.thirdPartyProvider.name || selectedNode.thirdPartyProvider.abbreviation) : selectedNode.thirdPartyProvider}</p>
                   </div>
                 )}
 
@@ -2647,7 +2657,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                 {selectedNode.thirdPartyProvider && (
                   <div>
                     <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Aligned Support Provider</h3>
-                    <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.thirdPartyProvider}</p>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>{typeof selectedNode.thirdPartyProvider === 'object' ? (selectedNode.thirdPartyProvider.name || selectedNode.thirdPartyProvider.abbreviation) : selectedNode.thirdPartyProvider}</p>
                   </div>
                 )}
 
@@ -2697,7 +2707,7 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                 {selectedNode.platform && (
                   <div>
                     <h3 className="text-sm font-semibold mb-1" style={{ color: '#002a42' }}>Platform</h3>
-                    <p className="text-sm" style={{ color: '#0b6180' }}>{selectedNode.platform}</p>
+                    <p className="text-sm" style={{ color: '#0b6180' }}>{typeof selectedNode.platform === 'object' ? (selectedNode.platform.name || selectedNode.platform.abbreviation) : selectedNode.platform}</p>
                   </div>
                 )}
 
