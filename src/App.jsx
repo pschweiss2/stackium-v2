@@ -90,12 +90,13 @@ export default function App() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes] = await Promise.all([
-          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*,application_admins.role,application_admins.admin_id.*&limit=-1`),
+        const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes, appAdminsRes] = await Promise.all([
+          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*&limit=-1`),
           fetch(`${DIRECTUS_URL}/items/connections?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/branding`),
           fetch(`${DIRECTUS_URL}/items/platforms?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/documentation`),
+          fetch(`${DIRECTUS_URL}/items/application_admins?fields=*,admin_id.*&limit=-1`),
         ]);
 
         if (!appsRes.ok) throw new Error(`Failed to fetch applications (${appsRes.status})`);
@@ -114,11 +115,24 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
-        // Debug: inspect application_admins shape on first few apps
-        console.log('[Admins Debug] First app with admins:', apps.find(a => a.application_admins?.length > 0));
-        console.log('[Admins Debug] Sample application_admins field:', apps.slice(0, 3).map(a => ({ id: a.id, name: a.name, application_admins: a.application_admins })));
+        // Merge application_admins (with nested admin data) onto each app
+        let appAdminRows = [];
+        if (appAdminsRes.ok) {
+          const { data } = await appAdminsRes.json();
+          appAdminRows = data || [];
+        }
+        console.log('[Admins Debug] Raw application_admins rows:', appAdminRows.slice(0, 5));
 
-        setAllApplications(apps);
+        const adminsByApp = {};
+        for (const row of appAdminRows) {
+          const appId = Number(row.application_id);
+          if (!adminsByApp[appId]) adminsByApp[appId] = [];
+          adminsByApp[appId].push({ role: row.role, admin_id: row.admin_id });
+        }
+        const appsWithAdmins = apps.map(a => ({ ...a, application_admins: adminsByApp[a.id] || [] }));
+        console.log('[Admins Debug] First app with admins:', appsWithAdmins.find(a => a.application_admins.length > 0));
+
+        setAllApplications(appsWithAdmins);
 
         // Map Directus source_id/target_id → source/target expected by EcosystemDiagram
         // Coerce to Number since Directus returns these as strings but app IDs are integers
