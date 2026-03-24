@@ -114,6 +114,10 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
+        // Debug: inspect application_admins shape on first few apps
+        console.log('[Admins Debug] First app with admins:', apps.find(a => a.application_admins?.length > 0));
+        console.log('[Admins Debug] Sample application_admins field:', apps.slice(0, 3).map(a => ({ id: a.id, name: a.name, application_admins: a.application_admins })));
+
         setAllApplications(apps);
 
         // Map Directus source_id/target_id → source/target expected by EcosystemDiagram
