@@ -114,6 +114,10 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
+        // DEBUG: log raw connections to inspect actual field names
+        console.log('[DEBUG] First connection raw:', JSON.stringify(connections[0], null, 2));
+        console.log('[DEBUG] All connections:', JSON.stringify(connections, null, 2));
+
         // DEBUG: fetch application_admins directly to see junction field names
         const aaDebugRes = await fetch(`${DIRECTUS_URL}/items/application_admins?fields=*&limit=5`);
         if (aaDebugRes.ok) {
