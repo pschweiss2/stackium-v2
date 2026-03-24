@@ -90,13 +90,14 @@ export default function App() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes, appAdminsRes] = await Promise.all([
-          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*,thirdPartyProvider.*&limit=-1`),
+        const [appsRes, connectionsRes, brandingRes, platformsRes, docsRes, appAdminsRes, thirdPartyRes] = await Promise.all([
+          fetch(`${DIRECTUS_URL}/items/applications?fields=*,platform.*&limit=-1`),
           fetch(`${DIRECTUS_URL}/items/connections?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/branding`),
           fetch(`${DIRECTUS_URL}/items/platforms?limit=-1`),
           fetch(`${DIRECTUS_URL}/items/documentation`),
           fetch(`${DIRECTUS_URL}/items/application_admins?fields=*,admin_id.*&limit=-1`),
+          fetch(`${DIRECTUS_URL}/items/third_party_providers?limit=-1`),
         ]);
 
         if (!appsRes.ok) throw new Error(`Failed to fetch applications (${appsRes.status})`);
@@ -132,7 +133,18 @@ export default function App() {
         const appsWithAdmins = apps.map(a => ({ ...a, application_admins: adminsByApp[a.id] || [] }));
         console.log('[Admins Debug] First app with admins:', appsWithAdmins.find(a => a.application_admins.length > 0));
 
-        setAllApplications(appsWithAdmins);
+        // Merge third_party_providers by ID onto each app
+        let thirdPartyMap = {};
+        if (thirdPartyRes.ok) {
+          const { data: thirdPartyData } = await thirdPartyRes.json();
+          for (const tp of (thirdPartyData || [])) thirdPartyMap[tp.id] = tp;
+        }
+        const appsWithAll = appsWithAdmins.map(a => ({
+          ...a,
+          thirdPartyProvider: thirdPartyMap[a.thirdPartyProvider] ?? a.thirdPartyProvider ?? null,
+        }));
+
+        setAllApplications(appsWithAll);
 
         // Map Directus source_id/target_id → source/target expected by EcosystemDiagram
         // Coerce to Number since Directus returns these as strings but app IDs are integers
