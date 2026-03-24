@@ -44,6 +44,17 @@ const SECURITY_CATEGORY_COLORS = {
   'DevSecOps': '#059669',
 };
 
+const WEBSITE_CATEGORY_COLORS = {
+  'Marketing': '#0891b2',
+  'Product': '#0b6180',
+  'Documentation': '#059669',
+  'Campaign': '#ef7322',
+  'Portal': '#1e40af',
+  'Landing Page': '#f79d1e',
+  'Support': '#6b7280',
+  'Other': '#374151',
+};
+
 function applyBranding(branding) {
   if (!branding) return;
   if (branding.primary_color) {
@@ -148,12 +159,22 @@ export default function App() {
     fetchData();
   }, []);
 
-  const appNodes = allApplications.filter(n => !n.is_security);
+  const appNodes = allApplications.filter(n => !n.is_security && !n.is_website);
   const securityNodes = allApplications.filter(n => n.is_security);
+  const websiteNodes = allApplications.filter(n => n.is_website);
 
-  const currentNodes = activeTab === 'applications' ? appNodes : securityNodes;
-  const currentColors = activeTab === 'applications' ? APP_CATEGORY_COLORS : SECURITY_CATEGORY_COLORS;
-  const tabName = activeTab === 'applications' ? 'Application' : 'Security';
+  const currentNodes =
+    activeTab === 'applications' ? appNodes :
+    activeTab === 'security' ? securityNodes :
+    websiteNodes;
+  const currentColors =
+    activeTab === 'applications' ? APP_CATEGORY_COLORS :
+    activeTab === 'security' ? SECURITY_CATEGORY_COLORS :
+    WEBSITE_CATEGORY_COLORS;
+  const tabName =
+    activeTab === 'applications' ? 'Application' :
+    activeTab === 'security' ? 'Security' :
+    'Public Sites';
 
   // Only pass connections where both endpoints exist in the current tab's nodes
   const currentNodeIds = new Set(currentNodes.map(n => n.id));
