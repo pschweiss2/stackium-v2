@@ -114,26 +114,14 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
-        // DEBUG: log raw connections to inspect actual field names
-        console.log('[DEBUG] First connection raw:', JSON.stringify(connections[0], null, 2));
-        console.log('[DEBUG] All connections:', JSON.stringify(connections, null, 2));
-
-        // DEBUG: fetch application_admins directly to see junction field names
-        const aaDebugRes = await fetch(`${DIRECTUS_URL}/items/application_admins?fields=*&limit=5`);
-        if (aaDebugRes.ok) {
-          const { data: aaDebugData } = await aaDebugRes.json();
-          console.log('[DEBUG] application_admins raw items:', JSON.stringify(aaDebugData, null, 2));
-        } else {
-          console.log('[DEBUG] application_admins fetch failed:', aaDebugRes.status);
-        }
-
         setAllApplications(apps);
 
         // Map Directus source_id/target_id → source/target expected by EcosystemDiagram
+        // Coerce to Number since Directus returns these as strings but app IDs are integers
         setAllConnections(
           connections.map(c => ({
-            source: c.source_id,
-            target: c.target_id,
+            source: Number(c.source_id),
+            target: Number(c.target_id),
             type: c.type,
             isISPConnection: c.isISPConnection,
           }))
