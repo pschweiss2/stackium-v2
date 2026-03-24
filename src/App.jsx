@@ -44,6 +44,17 @@ const SECURITY_CATEGORY_COLORS = {
   'DevSecOps': '#059669',
 };
 
+const WEBSITE_CATEGORY_COLORS = {
+  'Marketing': '#0891b2',
+  'Product': '#0b6180',
+  'Documentation': '#059669',
+  'Campaign': '#ef7322',
+  'Portal': '#1e40af',
+  'Landing Page': '#f79d1e',
+  'Support': '#6b7280',
+  'Other': '#374151',
+};
+
 function applyBranding(branding) {
   if (!branding) return;
   if (branding.primary_color) {
@@ -103,10 +114,13 @@ export default function App() {
         const { data: apps } = await appsRes.json();
         const { data: connections } = await connectionsRes.json();
 
-        // DEBUG: log first app's keys and application_admins value
-        if (apps[0]) {
-          console.log('[DEBUG] First app keys:', Object.keys(apps[0]));
-          console.log('[DEBUG] application_admins value:', JSON.stringify(apps[0].application_admins, null, 2));
+        // DEBUG: fetch application_admins directly to see junction field names
+        const aaDebugRes = await fetch(`${DIRECTUS_URL}/items/application_admins?fields=*&limit=5`);
+        if (aaDebugRes.ok) {
+          const { data: aaDebugData } = await aaDebugRes.json();
+          console.log('[DEBUG] application_admins raw items:', JSON.stringify(aaDebugData, null, 2));
+        } else {
+          console.log('[DEBUG] application_admins fetch failed:', aaDebugRes.status);
         }
 
         setAllApplications(apps);
@@ -145,12 +159,22 @@ export default function App() {
     fetchData();
   }, []);
 
-  const appNodes = allApplications.filter(n => !n.is_security);
+  const appNodes = allApplications.filter(n => !n.is_security && !n.is_website);
   const securityNodes = allApplications.filter(n => n.is_security);
+  const websiteNodes = allApplications.filter(n => n.is_website);
 
-  const currentNodes = activeTab === 'applications' ? appNodes : securityNodes;
-  const currentColors = activeTab === 'applications' ? APP_CATEGORY_COLORS : SECURITY_CATEGORY_COLORS;
-  const tabName = activeTab === 'applications' ? 'Application' : 'Security';
+  const currentNodes =
+    activeTab === 'applications' ? appNodes :
+    activeTab === 'security' ? securityNodes :
+    websiteNodes;
+  const currentColors =
+    activeTab === 'applications' ? APP_CATEGORY_COLORS :
+    activeTab === 'security' ? SECURITY_CATEGORY_COLORS :
+    WEBSITE_CATEGORY_COLORS;
+  const tabName =
+    activeTab === 'applications' ? 'Application' :
+    activeTab === 'security' ? 'Security' :
+    'Public Sites';
 
   // Only pass connections where both endpoints exist in the current tab's nodes
   const currentNodeIds = new Set(currentNodes.map(n => n.id));

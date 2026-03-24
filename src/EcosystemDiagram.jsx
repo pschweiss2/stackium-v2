@@ -1189,6 +1189,20 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
               >
                 Network & Endpoints
               </button>
+              <button
+                onClick={() => setActiveTab('websites')}
+                className={`pb-2 border-b-2 font-medium text-base transition-colors ${
+                  activeTab === 'websites'
+                    ? darkMode
+                      ? 'border-cyan-400 text-cyan-400'
+                      : 'border-cyan-600 text-cyan-600'
+                    : darkMode
+                      ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Public Sites
+              </button>
             </div>
 
             <h1 className="text-2xl md:text-4xl font-bold mb-2" style={{ color: darkMode ? '#f3f4f6' : '#002a42' }}>
