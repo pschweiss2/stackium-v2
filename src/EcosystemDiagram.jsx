@@ -1793,8 +1793,11 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                 {/* Admin Contacts — uses Directus application_admins M2M, falls back to legacy string fields */}
                 {(() => {
                   const appAdmins = selectedNode.application_admins || [];
+                  console.log('[Admins Debug] node:', selectedNode.id, selectedNode.name);
+                  console.log('[Admins Debug] application_admins raw:', selectedNode.application_admins);
                   const primaryAdmins = appAdmins.filter(aa => aa.role === 'primary' && aa.admin_id);
                   const secondaryAdmins = appAdmins.filter(aa => aa.role === 'secondary' && aa.admin_id);
+                  console.log('[Admins Debug] primary:', primaryAdmins, '| secondary:', secondaryAdmins);
 
                   const renderAdminCard = (admin, key) => (
                     <div key={key} className="space-y-2">
@@ -2609,8 +2612,11 @@ export default function EcosystemDiagram({ nodes, links, categoryColors, tabName
                 {/* Admin Contacts — uses Directus application_admins M2M, falls back to legacy string fields */}
                 {(() => {
                   const appAdmins = selectedNode.application_admins || [];
+                  console.log('[Admins Debug] node:', selectedNode.id, selectedNode.name);
+                  console.log('[Admins Debug] application_admins raw:', selectedNode.application_admins);
                   const primaryAdmins = appAdmins.filter(aa => aa.role === 'primary' && aa.admin_id);
                   const secondaryAdmins = appAdmins.filter(aa => aa.role === 'secondary' && aa.admin_id);
+                  console.log('[Admins Debug] primary:', primaryAdmins, '| secondary:', secondaryAdmins);
 
                   const renderAdminCard = (admin, key) => (
                     <div key={key} className="space-y-2">
