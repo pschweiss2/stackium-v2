@@ -110,14 +110,22 @@ chmod 600 /etc/ssl/cloudflare/key.pem
 
 ### 1.6 Install Directus
 
+Install SQLite build dependencies (required for `better-sqlite3` to compile from source):
+
+```bash
+apt install -y python3 make g++ libsqlite3-dev
+```
+
 Create a dedicated directory and install Directus as a local package:
 
 ```bash
 mkdir -p /opt/directus
 cd /opt/directus
 npm init -y
-npm install directus
+npm install directus better-sqlite3
 ```
+
+> **Why `better-sqlite3`?** The default `sqlite3` driver ships pre-built binaries that require GLIBC 2.38+, which is only available on Ubuntu 24.04+ or Debian 13+. `better-sqlite3` compiles from source and works on any distro. Directus fully supports it.
 
 > **Do not use `npx directus init`** — the interactive wizard does not persist the install and fails silently on Node engine mismatches. A local install + manual `.env` is more reliable.
 
@@ -141,7 +149,7 @@ HOST=127.0.0.1
 PORT=8055
 PUBLIC_URL=https://api.acme.stackium.tech
 
-DB_CLIENT=sqlite3
+DB_CLIENT=better-sqlite3
 DB_FILENAME=/opt/directus/database.db
 
 KEY=<64-char hex from above>
