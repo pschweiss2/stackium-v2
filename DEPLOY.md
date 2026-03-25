@@ -1,6 +1,6 @@
 # Stackium v2 — New Org Deployment Guide
 
-This guide walks through deploying a fresh Stackium v2 instance for a new organization: Linode VPS (Directus + SQLite), Cloudflare Pages (frontend), and Cloudflare Access (viewer auth).
+This guide walks through deploying a fresh Stackium v2 instance for a new organization: Linode VPS (Directus + PostgreSQL), Cloudflare Pages (frontend), and Cloudflare Access (viewer auth).
 
 **Time estimate:** ~2–3 hours for a first deployment.
 
@@ -80,12 +80,25 @@ npm install -g pm2
 
 ### 1.4 Configure the Firewall
 
+**Linode Cloud Firewall (if attached to this Linode):**
+
+If you assigned a Linode Cloud Firewall to this node, ensure inbound rules exist for:
+- TCP port 22 (SSH)
+- TCP port 80 (HTTP)
+- TCP port 443 (HTTPS)
+
+Check in Linode Dashboard → **Firewalls** → your firewall → **Rules**.
+
+**ufw (optional, secondary layer):**
+
 ```bash
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
 ufw enable
 ufw status
 ```
+
+> If you're using a Linode Cloud Firewall, ufw is redundant but harmless. The Linode firewall operates at the network level and takes precedence.
 
 ### 1.5 Obtain a Cloudflare Origin Certificate
 
@@ -108,13 +121,35 @@ nano /etc/ssl/cloudflare/key.pem       # paste the Private Key
 chmod 600 /etc/ssl/cloudflare/key.pem
 ```
 
-### 1.6 Install Directus
-
-Install SQLite build dependencies (required for `better-sqlite3` to compile from source):
+### 1.6 Install PostgreSQL
 
 ```bash
-apt install -y python3 make g++ libsqlite3-dev
+apt install -y postgresql postgresql-contrib
+systemctl enable --now postgresql
 ```
+
+Create the database and user:
+
+```bash
+sudo -u postgres psql
+```
+
+Inside psql:
+
+```sql
+CREATE USER directus WITH PASSWORD 'your_strong_password';
+CREATE DATABASE stackium OWNER directus;
+GRANT ALL PRIVILEGES ON DATABASE stackium TO directus;
+\q
+```
+
+Verify the connection works before continuing:
+
+```bash
+psql -U directus -h localhost -d stackium
+```
+
+### 1.7 Install Directus
 
 Create a dedicated directory and install Directus as a local package:
 
@@ -122,10 +157,8 @@ Create a dedicated directory and install Directus as a local package:
 mkdir -p /opt/directus
 cd /opt/directus
 npm init -y
-npm install directus better-sqlite3
+npm install directus pg
 ```
-
-> **Why `better-sqlite3`?** The default `sqlite3` driver ships pre-built binaries that require GLIBC 2.38+, which is only available on Ubuntu 24.04+ or Debian 13+. `better-sqlite3` compiles from source and works on any distro. Directus fully supports it.
 
 > **Do not use `npx directus init`** — the interactive wizard does not persist the install and fails silently on Node engine mismatches. A local install + manual `.env` is more reliable.
 
@@ -149,8 +182,12 @@ HOST=127.0.0.1
 PORT=8055
 PUBLIC_URL=https://api.acme.stackium.tech
 
-DB_CLIENT=better-sqlite3
-DB_FILENAME=/opt/directus/database.db
+DB_CLIENT=pg
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=stackium
+DB_USER=directus
+DB_PASSWORD=your_strong_password
 
 KEY=<64-char hex from above>
 SECRET=<64-char hex from above>
@@ -169,13 +206,13 @@ RATE_LIMITER_DURATION=1
 
 > **Security note:** `HOST=127.0.0.1` ensures Directus only listens on localhost. Nginx proxies to it — nothing hits Directus directly.
 
-Bootstrap the database (creates the SQLite file, runs migrations, creates the admin user):
+Bootstrap the database (runs migrations, creates the admin user):
 
 ```bash
-npx directus bootstrap
+./node_modules/.bin/directus bootstrap
 ```
 
-### 1.7 Configure Nginx Reverse Proxy
+### 1.8 Configure Nginx Reverse Proxy
 
 Create the Nginx config for Directus:
 
@@ -225,14 +262,16 @@ nginx -t
 systemctl reload nginx
 ```
 
-### 1.8 Start Directus with PM2
+### 1.9 Start Directus with PM2
 
 ```bash
 cd /opt/directus
-pm2 start npx --name directus -- directus start
+pm2 start ./node_modules/.bin/directus --name directus -- start
 pm2 save
 pm2 startup   # run the printed command to enable auto-start on reboot
 ```
+
+> **Important:** `--name directus` must come before `--` — everything after `--` is passed to the Directus CLI, not PM2. Getting this wrong causes a restart loop with `error: unknown option '--name'`.
 
 Verify it's running:
 
@@ -459,11 +498,10 @@ pm2 logs directus   # tail logs
 
 ### Backup the Database
 
-SQLite is a single file. Back it up with:
-
 ```bash
 # On the VPS
-cp /opt/directus/database.db /opt/directus/backups/database-$(date +%Y%m%d).db
+mkdir -p /opt/directus/backups
+pg_dump -U directus -h localhost stackium > /opt/directus/backups/stackium-$(date +%Y%m%d).sql
 ```
 
 Set up a cron job for nightly backups:
@@ -471,7 +509,7 @@ Set up a cron job for nightly backups:
 ```bash
 crontab -e
 # Add:
-0 3 * * * cp /opt/directus/database.db /opt/directus/backups/database-$(date +\%Y\%m\%d).db
+0 3 * * * pg_dump -U directus -h localhost stackium > /opt/directus/backups/stackium-$(date +\%Y\%m\%d).sql
 ```
 
 Consider periodically syncing backups off-VPS (Linode Object Storage, S3, etc.).
@@ -481,7 +519,7 @@ Consider periodically syncing backups off-VPS (Linode Object Storage, S3, etc.).
 ```bash
 ssh root@[Linode IP]
 cd /opt/directus
-npm install directus@latest
+npm install directus@latest pg
 pm2 restart directus
 ```
 
