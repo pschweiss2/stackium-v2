@@ -40,9 +40,14 @@ In Cloudflare (or your DNS provider), create an **A record**:
 Type: A
 Name: api          (e.g. api.acme.stackium.tech)
 Value: [Linode IPv4]
-Proxy: DNS only (gray cloud) — required for SSL cert provisioning
+Proxy: Proxied (orange cloud)
 TTL: Auto
 ```
+
+Also set the **SSL/TLS mode** for the zone to **Full (Strict)**:
+Cloudflare Dashboard → your domain → **SSL/TLS → Overview → Full (Strict)**
+
+> Full (Strict) means Cloudflare encrypts traffic to your VPS and validates the certificate on the origin. Without this, Cloudflare would accept an invalid cert, which defeats the point of encryption between Cloudflare and the VPS.
 
 Wait a few minutes for DNS to propagate before continuing.
 
@@ -56,7 +61,7 @@ Update the system and install dependencies:
 
 ```bash
 apt update && apt upgrade -y
-apt install -y nginx certbot python3-certbot-nginx curl git ufw
+apt install -y nginx curl git ufw
 ```
 
 Install Node.js 20 via NodeSource:
@@ -82,18 +87,25 @@ ufw enable
 ufw status
 ```
 
-### 1.5 Obtain SSL Certificate
+### 1.5 Obtain a Cloudflare Origin Certificate
+
+Because the DNS record is proxied (orange cloud), Cloudflare terminates SSL — not the VPS directly. Use a **Cloudflare Origin Certificate** instead of Let's Encrypt. It's free, valid for 15 years, and requires no renewal automation.
+
+1. Cloudflare Dashboard → your domain → **SSL/TLS → Origin Server**
+2. **Create Certificate**
+3. Settings:
+   - **Private key type:** RSA (2048)
+   - **Hostnames:** `api.acme.stackium.tech` (add `*.acme.stackium.tech` if you want a wildcard)
+   - **Certificate validity:** 15 years
+4. Click **Create** — Cloudflare shows you the **Origin Certificate** and **Private Key**. Copy both — the private key is only shown once.
+
+On the VPS, save them:
 
 ```bash
-certbot --nginx -d api.acme.stackium.tech
-```
-
-Follow the prompts (enter email, agree to TOS, choose redirect). Certbot will modify the Nginx config automatically.
-
-Verify auto-renewal:
-
-```bash
-certbot renew --dry-run
+mkdir -p /etc/ssl/cloudflare
+nano /etc/ssl/cloudflare/cert.pem      # paste the Origin Certificate
+nano /etc/ssl/cloudflare/key.pem       # paste the Private Key
+chmod 600 /etc/ssl/cloudflare/key.pem
 ```
 
 ### 1.6 Install Directus
@@ -172,10 +184,10 @@ server {
     }
 
     listen 443 ssl;
-    ssl_certificate /etc/letsencrypt/live/api.acme.stackium.tech/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.acme.stackium.tech/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    ssl_certificate /etc/ssl/cloudflare/cert.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 }
 
 server {
@@ -456,14 +468,14 @@ pm2 restart directus
 
 Always check the [Directus changelog](https://github.com/directus/directus/releases) for breaking changes before upgrading.
 
-### Renew SSL Certificate
+### SSL Certificate
 
-Certbot auto-renews via a systemd timer. To force a renewal:
+The Cloudflare Origin Certificate is valid for 15 years and does not auto-expire or need renewal automation. If you ever need to rotate it (e.g., key compromise):
 
-```bash
-certbot renew
-systemctl reload nginx
-```
+1. Cloudflare Dashboard → **SSL/TLS → Origin Server → Revoke** the old cert
+2. Create a new Origin Certificate (same steps as section 1.5)
+3. Replace `/etc/ssl/cloudflare/cert.pem` and `key.pem` on the VPS
+4. `systemctl reload nginx`
 
 ---
 
