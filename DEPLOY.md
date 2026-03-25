@@ -64,12 +64,12 @@ apt update && apt upgrade -y
 apt install -y nginx curl git ufw
 ```
 
-Install Node.js 20 via NodeSource:
+Install Node.js 22 via NodeSource (Directus 11+ requires Node 22):
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
-node -v   # should print v20.x
+node -v   # should print v22.x
 ```
 
 Install PM2 globally:
@@ -110,40 +110,53 @@ chmod 600 /etc/ssl/cloudflare/key.pem
 
 ### 1.6 Install Directus
 
-Create a dedicated directory:
+Install SQLite build dependencies (required for `better-sqlite3` to compile from source):
+
+```bash
+apt install -y python3 make g++ libsqlite3-dev
+```
+
+Create a dedicated directory and install Directus as a local package:
 
 ```bash
 mkdir -p /opt/directus
 cd /opt/directus
+npm init -y
+npm install directus better-sqlite3
 ```
 
-Initialize Directus with SQLite:
+> **Why `better-sqlite3`?** The default `sqlite3` driver ships pre-built binaries that require GLIBC 2.38+, which is only available on Ubuntu 24.04+ or Debian 13+. `better-sqlite3` compiles from source and works on any distro. Directus fully supports it.
+
+> **Do not use `npx directus init`** — the interactive wizard does not persist the install and fails silently on Node engine mismatches. A local install + manual `.env` is more reliable.
+
+Generate two secrets for the `.env`:
 
 ```bash
-npx directus@latest init
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# run twice — copy both outputs, one for KEY, one for SECRET
 ```
 
-When prompted:
-- **Database client:** `SQLite`
-- **Database file path:** `/opt/directus/database.db`
-- **Admin email:** `admin@acme.com` (use a real address — you'll log in with this)
-- **Admin password:** set a strong password, save it
-
-This generates a `.env` file. Open it:
+Create the `.env` file:
 
 ```bash
 nano /opt/directus/.env
 ```
 
-Verify/set these values:
+Paste and fill in your values:
 
 ```env
 HOST=127.0.0.1
 PORT=8055
 PUBLIC_URL=https://api.acme.stackium.tech
 
-DB_CLIENT=sqlite3
+DB_CLIENT=better-sqlite3
 DB_FILENAME=/opt/directus/database.db
+
+KEY=<64-char hex from above>
+SECRET=<64-char hex from above>
+
+ADMIN_EMAIL=admin@acme.com
+ADMIN_PASSWORD=<your-strong-password>
 
 CORS_ENABLED=true
 CORS_ORIGIN=https://app.acme.com   # your frontend domain
@@ -156,9 +169,15 @@ RATE_LIMITER_DURATION=1
 
 > **Security note:** `HOST=127.0.0.1` ensures Directus only listens on localhost. Nginx proxies to it — nothing hits Directus directly.
 
+Bootstrap the database (creates the SQLite file, runs migrations, creates the admin user):
+
+```bash
+npx directus bootstrap
+```
+
 ### 1.7 Configure Nginx Reverse Proxy
 
-The certbot step created `/etc/nginx/sites-available/default`. Replace it with a clean config:
+Create the Nginx config for Directus:
 
 ```bash
 nano /etc/nginx/sites-available/directus
