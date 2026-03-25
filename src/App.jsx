@@ -137,18 +137,14 @@ export default function App() {
         let thirdPartyMap = {};
         if (thirdPartyRes.ok) {
           const { data: thirdPartyData } = await thirdPartyRes.json();
-          console.log('[ThirdParty Debug] All third_party_providers:', thirdPartyData);
           for (const tp of (thirdPartyData || [])) thirdPartyMap[tp.id] = tp;
         } else {
           console.warn('[ThirdParty Debug] third_party_providers fetch failed:', thirdPartyRes.status);
         }
-        console.log('[ThirdParty Debug] thirdPartyMap:', thirdPartyMap);
-        console.log('[ThirdParty Debug] Raw thirdPartyProvider values on apps:', apps.slice(0, 5).map(a => ({ id: a.id, name: a.name, thirdPartyProvider: a.thirdPartyProvider })));
         const appsWithAll = appsWithAdmins.map(a => ({
           ...a,
-          thirdPartyProvider: thirdPartyMap[a.thirdPartyProvider] ?? a.thirdPartyProvider ?? null,
+          thirdPartyProvider: thirdPartyMap[a.third_party_providers] ?? null,
         }));
-        console.log('[ThirdParty Debug] First app with thirdPartyProvider resolved:', appsWithAll.find(a => a.thirdPartyProvider));
 
         setAllApplications(appsWithAll);
 
